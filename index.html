@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Circular Countdown Timer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
         /* Custom CSS for finer control and circular shape */
         body {
@@ -131,8 +132,10 @@
         const messageText = document.getElementById('messageText');
         const controlButton = document.getElementById('controlButton');
 
+        const audioElement = new Audio("https://github.com/buttercup91709/AL-A-Timer/blob/main/timerAudio.mp3?raw=true");
+
         // Initial time in seconds (e.g., 60 seconds for 1 minute)
-        const totalTime = 60; 
+        const totalTime = 180; 
         let timeLeft = totalTime;
         let timerInterval;
 
@@ -164,7 +167,7 @@
          * @param {number} frequency - The frequency of the beep in Hz.
          * @param {number} duration - The duration of the beep in seconds.
          */
-        function playBeep(frequency = 880, duration = 0.1) {
+        /*function playBeep(frequency = 880, duration = 0.1) {
             if (!audioContext) {
                 // Lazily create AudioContext on first user interaction
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -185,7 +188,7 @@
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + duration);
-        }
+        }*/
 
         /**
          * Plays multiple beep sounds with a delay between them.
@@ -194,7 +197,7 @@
          * @param {number} duration - The duration of each beep.
          * @param {number} delay - The delay between beeps in seconds.
          */
-        function playMultipleBeeps(count, frequency, duration, delay) {
+        /*function playMultipleBeeps(count, frequency, duration, delay) {
             let beepCount = 0;
             const interval = setInterval(() => {
                 playBeep(frequency, duration);
@@ -203,12 +206,16 @@
                     clearInterval(interval);
                 }
             }, delay * 1000); // Convert delay to milliseconds
-        }
+        }*/
 
         /**
          * Starts or resumes the countdown timer.
          */
         function startTimer() {
+            //create Audiocontext
+            audioElement.volume = 1.0;
+            audioElement.play();
+
             timeLeft = totalTime; // Reset time back to start value
             currentTimerState = "RUNNING";
             controlButton.textContent = 'Stop';
@@ -230,7 +237,7 @@
                     timerContainer.classList.remove('red-timer'); // Remove red class
                     timerContainer.classList.add('yellow-timer'); // Add yellow class
                     messageText.textContent = "30 seconds left!";
-                    playMultipleBeeps(2, 600,2,0.5); // One beep sound
+                    /*playMultipleBeeps(2, 600,2,0.5); // One beep sound */
                     
                 } 
                 // Check if timer has reached zero
@@ -244,6 +251,11 @@
                     messageText.textContent = "Time's Up!"; // Display "Time's Up" message
                     playMultipleBeeps(4, 600, 2, 0.5); // Three beep sounds
                     currentTimerState = "FINISHED";
+
+                    setTimeout(() => {
+                    audioElement.volume = 0.0;
+                    }, 100);
+
                     controlButton.textContent = 'Start';                   
                 }
             }, 1000); // Update every 1000 milliseconds (1 second)
@@ -264,6 +276,10 @@
             timerText.textContent = "00:00"; // Display final time
             messageText.textContent = ""; // Clear message
             
+            setTimeout(() => {
+            audioElement.volume = 0.0;
+            }, 100);
+
             controlButton.textContent = 'Start Timer'; // Change button back to Start
         }
 
