@@ -249,14 +249,15 @@
                     timerContainer.classList.add('blink');
                     timerText.textContent = "00:00"; // Display final time
                     messageText.textContent = "Time's Up!"; // Display "Time's Up" message
-                    playMultipleBeeps(4, 600, 2, 0.5); // Three beep sounds
+                    controlButton.textContent = 'Start'; 
+                    /*playMultipleBeeps(4, 600, 2, 0.5); // Three beep sounds */
                     currentTimerState = "FINISHED";
 
                     setTimeout(() => {
                     audioElement.volume = 0.0;
                     }, 100);
 
-                    controlButton.textContent = 'Start';                   
+                                      
                 }
             }, 1000); // Update every 1000 milliseconds (1 second)
         }
