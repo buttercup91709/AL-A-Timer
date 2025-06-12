@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circular Countdown Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <style>
+        /* Custom CSS for finer control and circular shape */
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            overflow: hidden; /* Prevent scrolling */
+        }
+
+        .timer-container {
+            position: relative;
+            width: 280px; /* Larger for better mobile visibility */
+            height: 280px;
+            border-radius: 50%; /* Perfect circle */
+            background-color: #4CAF50; /* Initial Green */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+            transition: background-color 0.6s ease-in-out; /* Smooth color transition */
+            margin-bottom: 30px; /* Space between timer and button */
+        }
+
+        .timer-text {
+            color: white;
+            font-size: 4.5em; /* Large font for time display */
+            font-weight: 700; /* Bold font weight */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Text shadow for readability */
+        }
+
+        .message-text {
+            color: white;
+            font-size: 1.4em;
+            margin-top: 10px;
+            font-weight: 400;
+        }
+
+        .control-button {
+            padding: 18px 40px; /* Larger padding for easier tapping */
+            font-size: 1.4em;
+            background-color: #1a73e8; /* Google Blue */
+            color: white;
+            border: none;
+            border-radius: 12px; /* More rounded corners */
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Button shadow */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth hover effects */
+        }
+
+        .control-button:hover {
+            background-color: #155bb5;
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .control-button:active {
+            transform: translateY(0); /* Press down effect */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Color classes */
+        .yellow-timer {
+            background-color: #FFD700; /* Gold-like yellow */
+        }
+
+        .red-timer {
+            background-color: #E74C3C; /* Brighter red */
+        }
+
+        /* Responsive adjustments for smaller screens if needed, though relative units help */
+        @media (max-width: 400px) {
+            .timer-container {
+                width: 220px;
+                height: 220px;
+            }
+            .timer-text {
+                font-size: 3.5em;
+            }
+            .message-text {
+                font-size: 1.1em;
+            }
+            .control-button {
+                padding: 15px 30px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main container for the timer -->
+    <div id="timerContainer" class="timer-container rounded-full">
+        <!-- Text display for the timer -->
+        <div id="timerText" class="timer-text">01:00</div>
+        <!-- Message display area -->
+        <div id="messageText" class="message-text"></div>
+    </div>
+    
+    <!-- Control button (Start/Stop) -->
+    <button id="controlButton" class="control-button">Start Timer</button>
+
+    <!-- Audio elements for sounds -->
+    <!-- Replace 'path/to/gentle-sound.mp3' and 'path/to/alarm-sound.mp3' with your actual sound file URLs -->
+    <audio id="gentleSound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
+    <audio id="alarmSound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" preload="auto"></audio>
+
+    <script>
+        // Get references to HTML elements
+        const timerContainer = document.getElementById('timerContainer');
+        const timerText = document.getElementById('timerText');
+        const messageText = document.getElementById('messageText');
+        const controlButton = document.getElementById('controlButton');
+        const gentleSound = document.getElementById('gentleSound');
+        const alarmSound = document.getElementById('alarmSound');
+
+        // Initial time in seconds (e.g., 60 seconds for 1 minute)
+        const totalTime = 60; 
+        let timeLeft = totalTime;
+        let timerInterval;
+        // Flag to ensure gentle sound plays only once at 30 seconds
+        let gentleSoundPlayed = false;
+
+        // Enum-like object for timer states
+        const TimerState = {
+            INITIAL: 'initial', // Timer is ready to start or has been reset
+            RUNNING: 'running', // Timer is actively counting down
+            FINISHED: 'finished' // Timer has reached zero
+        };
+        let currentTimerState = TimerState.INITIAL;
+
+        /**
+         * Formats the given number of seconds into a MM:SS string.
+         * @param {number} seconds - The total number of seconds.
+         * @returns {string} The formatted time string.
+         */
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        /**
+         * Updates the text content of the timer display.
+         */
+        function updateTimerDisplay() {
+            timerText.textContent = formatTime(timeLeft);
+        }
+
+        /**
+         * Attempts to play and immediately pause sounds to unlock the audio context.
+         * This is a common workaround for browser autoplay policies.
+         */
+        async function unlockAudioContext() {
+            try {
+                // Mute sounds temporarily for the initial play/pause
+                gentleSound.muted = true;
+                alarmSound.muted = true;
+
+                // Attempt to play and pause
+                await gentleSound.play();
+                gentleSound.pause();
+                gentleSound.currentTime = 0; // Reset playback position
+
+                await alarmSound.play();
+                alarmSound.pause();
+                alarmSound.currentTime = 0; // Reset playback position
+
+                // Unmute sounds for actual use
+                gentleSound.muted = false;
+                alarmSound.muted = false;
+            } catch (e) {
+                console.warn("Failed to unlock audio context:", e);
+                // The error message from the user indicates this catch block might be hit.
+                // In such cases, the user might need to adjust browser settings or
+                // ensure the initial click is truly registering as a "user gesture".
+            }
+        }
+
+        /**
+         * Starts or resumes the countdown timer.
+         */
+        function startTimer() {
+            currentTimerState = TimerState.RUNNING;
+            controlButton.textContent = 'Stop';
+            messageText.textContent = ""; // Clear any initial message
+
+            // Ensure audio context is unlocked on start, if it hasn't been yet
+            unlockAudioContext();
+
+            timerInterval = setInterval(() => {
+                timeLeft--; // Decrement time remaining
+                updateTimerDisplay(); // Update the displayed time
+
+                // Check for 30-second mark
+                if (timeLeft === 30 && !gentleSoundPlayed) {
+                    timerContainer.classList.remove('red-timer'); // Ensure red is removed
+                    timerContainer.classList.add('yellow-timer'); // Add yellow class
+                    messageText.textContent = "30 seconds left!";
+                    gentleSound.play().catch(e => console.error("Error playing gentle sound at 30s:", e));
+                    gentleSoundPlayed = true; // Set flag to true to prevent repeated playing
+                } 
+                // Check if timer has reached zero
+                else if (timeLeft <= 0) {
+                    clearInterval(timerInterval); // Stop the interval
+                    timerContainer.classList.remove('yellow-timer'); // Remove yellow class
+                    timerContainer.classList.add('red-timer'); // Add red class
+                    timerText.textContent = "00:00"; // Display final time
+                    messageText.textContent = "Time's Up!"; // Display "Time's Up" message
+                    alarmSound.play().catch(e => console.error("Error playing alarm sound at end:", e));
+                    currentTimerState = TimerState.FINISHED;
+                    controlButton.textContent = 'Start Timer'; // Change button back to Start (for a new timer)
+                }
+            }, 1000); // Update every 1000 milliseconds (1 second)
+        }
+
+        /**
+         * Stops the countdown timer and resets it to its initial state.
+         * This function handles both pausing and resetting to initial state.
+         */
+        function stopAndResetTimer() {
+            clearInterval(timerInterval); // Stop the interval
+            timeLeft = totalTime; // Reset time left
+            gentleSoundPlayed = false; // Reset gentle sound flag
+            currentTimerState = TimerState.INITIAL; // Set state to initial
+
+            // Reset timer container color to green
+            timerContainer.classList.remove('yellow-timer', 'red-timer');
+            timerContainer.style.backgroundColor = '#4CAF50'; 
+
+            messageText.textContent = ""; // Clear message
+            updateTimerDisplay(); // Update display to initial time
+            controlButton.textContent = 'Start Timer'; // Change button back to Start
+            
+            // Stop any playing sounds and reset their playback position
+            gentleSound.pause();
+            gentleSound.currentTime = 0;
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+        }
+
+        // Add event listener to the control button
+        controlButton.addEventListener('click', () => {
+            if (currentTimerState === TimerState.INITIAL || currentTimerState === TimerState.FINISHED) {
+                // If in initial state or finished, start the timer
+                startTimer();
+            } else if (currentTimerState === TimerState.RUNNING) {
+                // If running, stop and reset the timer
+                stopAndResetTimer();
+            }
+        });
+
+        // Initial display of the timer before it starts
+        updateTimerDisplay();
+    </script>
+</body>
+</html>
