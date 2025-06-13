@@ -112,6 +112,11 @@
             }
         }
     </style>
+
+    <audio>
+        <source src="https://github.com/buttercup91709/AL-A-Timer/blob/main/timerAudio.mp3?raw=true" type="audio/mpeg"/>
+    </audio>
+
 </head>
 <body>
     <!-- Main container for the timer -->
@@ -131,8 +136,9 @@
         const timerText = document.getElementById('timerText');
         const messageText = document.getElementById('messageText');
         const controlButton = document.getElementById('controlButton');
+        const audio = document.querySelector("audio");
 
-        const audioElement = new Audio("https://github.com/buttercup91709/AL-A-Timer/blob/main/timerAudio.mp3?raw=true");
+        /*const audioElement = new Audio("https://github.com/buttercup91709/AL-A-Timer/blob/main/timerAudio.mp3?raw=true");*/
 
         // Initial time in seconds (e.g., 60 seconds for 1 minute)
         const totalTime = 180; 
@@ -140,8 +146,8 @@
         let timerInterval;
 
         // Web Audio API context for generating sounds
-        let audioContext;
-
+        /*let audioContext;
+*/
         let currentTimerState = "INITIAL";
 
         /**
@@ -162,60 +168,12 @@
             timerText.textContent = formatTime(timeLeft);
         }
 
-        /**
-         * Plays a beep sound using the Web Audio API.
-         * @param {number} frequency - The frequency of the beep in Hz.
-         * @param {number} duration - The duration of the beep in seconds.
-         */
-        /*function playBeep(frequency = 880, duration = 0.1) {
-            if (!audioContext) {
-                // Lazily create AudioContext on first user interaction
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'sine'; // Sine wave for a clean beep
-
-            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
-            // Fade out the beep to prevent clicking sound
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
-        }*/
-
-        /**
-         * Plays multiple beep sounds with a delay between them.
-         * @param {number} count - The number of beeps to play.
-         * @param {number} frequency - The frequency of each beep.
-         * @param {number} duration - The duration of each beep.
-         * @param {number} delay - The delay between beeps in seconds.
-         */
-        /*function playMultipleBeeps(count, frequency, duration, delay) {
-            let beepCount = 0;
-            const interval = setInterval(() => {
-                playBeep(frequency, duration);
-                beepCount++;
-                if (beepCount >= count) {
-                    clearInterval(interval);
-                }
-            }, delay * 1000); // Convert delay to milliseconds
-        }*/
 
         /**
          * Starts or resumes the countdown timer.
          */
         function startTimer() {
-            //create Audiocontext
-            audioElement.volume = 1.0;
-            audioElement.play();
-
+            audio.play();
             timeLeft = totalTime; // Reset time back to start value
             currentTimerState = "RUNNING";
             controlButton.textContent = 'Stop';
@@ -252,12 +210,7 @@
                     controlButton.textContent = 'Start'; 
                     /*playMultipleBeeps(4, 600, 2, 0.5); // Three beep sounds */
                     currentTimerState = "FINISHED";
-
-                    setTimeout(() => {
-                    audioElement.volume = 0.0;
-                    }, 100);
-
-                                      
+             
                 }
             }, 1000); // Update every 1000 milliseconds (1 second)
         }
@@ -276,10 +229,9 @@
             timerContainer.classList.add('red-timer'); // Add red class
             timerText.textContent = "00:00"; // Display final time
             messageText.textContent = ""; // Clear message
-            
-            setTimeout(() => {
-            audioElement.volume = 0.0;
-            }, 100);
+            // Stop = pause + reset the playhead
+            audio.pause();
+            audio.currentTime = 0;
 
             controlButton.textContent = 'Start Timer'; // Change button back to Start
         }
